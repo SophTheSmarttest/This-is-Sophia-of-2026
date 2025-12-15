@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rose Petal Picker</title>
+<style>
+  :root{
+    --bg-1:#fff7f9;
+    --bg-2:#ffe6ef;
+    --accent:#e53935;   /* petal red */
+    --accent-dark:#b71c1c;
+    --stem:#2e7d32;
+    --leaf:#43a047;
+    --text:#222;
+    --panel:#ffffffcc;
+    --shadow: 0 10px 25px rgba(0,0,0,.15);
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background: radial-gradient(1200px 700px at 30% 10%, var(--bg-2), var(--bg-1));
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    color:var(--text);
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 40px auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1.2fr .9fr;
+    gap: 24px;
+  }
+
+  .card{
+    background: var(--panel);
+    backdrop-filter: blur(6px);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .stage{
+    position: relative;
+    min-height: 520px;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Scoreboard panel */
+  .hud{
+    padding: 18px 22px;
+  }
+
+  .hud h1{
+    margin: 0 0 8px;
+    font-size: 24px;
+  }
+
+  .stat{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    padding:10px 0;
+    border-bottom: 1px dashed #ddd;
+  }
+  .stat:last-child{ border-bottom: none; }
+
+  .big{
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: .5px;
+  }
+
+  .result{
+    margin-top: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    min-height: 28px;
+  }
+
+  .controls{
+    margin-top: 16px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  button{
+    appearance: none;
+    border: none;
+    border-radius: 12px;
+    background: #222;
+    color: #fff;
+    padding: 10px 14px;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(0,0,0,.25);
+  }
+  button.secondary{ background: #555; }
+  button:disabled{ opacity:.6; cursor:not-allowed; }
+
+  /* SVG / Rose styles */
+  svg{
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .petal{
+    fill: var(--accent);
+    stroke: var(--accent-dark);
+    stroke-width: 1.2;
+    cursor: pointer;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.15));
+    transition: fill .12s ease, opacity .12s ease;
+    transform-box: fill-box;      /* enable CSS transform on SVG nicely */
+    transform-origin: center;
+  }
+  .petal:hover{ fill: #ef5350; }
+
+  .petal.removed{
+    pointer-events: none;
+  }
+
+  /* Falling animation when a petal is plucked */
+  @keyframes fall {
+    0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+    50%  { transform: translate(0,90px) rotate(15deg); opacity: .85; }
+    100% { transform: translate(0,220px) rotate(45deg); opacity: 0; }
+  }
+  .falling{
+    animation: fall 1.1s ease-out forwards;
+  }
+
+  /* Center bud glow */
+  .bud{
+    fill: #d81b60;
+    stroke: #880e4f;
+    stroke-width: 1.4;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.2));
+  }
+
+  /* Stem & leaves */
+  .stem{
+    fill: none;
+    stroke: var(--stem);
+    stroke-width: 6;
+    stroke-linecap: round;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.1));
+  }
+  .leaf{
+    fill: var(--leaf);
+    stroke: #2f8241;
+    stroke-width: 1.1;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,.12));
+  }
+
+  /* Tooltip */
+  .tip{
+    position:absolute;
+    top: 12px;
+    right: 16px;
+    background: #000;
+    color:#fff;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    opacity: .9;
+  }
+
+  /* Mobile tweaks */
+  @media (max-width: 900px){
+    .wrap{
+      grid-template-columns: 1fr;
+      margin: 20px auto;
+    }
+    .stage{ min-height: 480px; }
+    .big{ font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card stage" id="stage">
+      <div class="tip">Pick petals fast for a higher score!</div>
+
+      <!-- SVG Rose will be generated dynamically -->
+      <svg id="rose" viewBox="0 0 400 520" aria-label="Red rose with clickable petals" role="img"></svg>
+    </div>
+
+    <div class="card hud">
+      <h1>Rose Petal Picker 🌹</h1>
+
+      <div class="stat">
+        <div>Petals left</div>
+        <div id="left" class="big">—</div>
+      </div>
+      <div class="stat">
+        <div>Time (s)</div>
+        <div id="time" class="big">0.0</div>
+      </div>
+      <div class="stat">
+        <div>Score</div>
+        <div id="score" class="big">0</div>
+      </div>
+
+      <div id="result" class="result"></div>
+
+      <div class="controls">
+        <button id="play">Play again</button>
+        <button id="shuf" class="secondary" title="Shuffle petal arrangement">Shuffle petals</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const svgNS = "http://www.w3.org/2000/svg";
+  const rose = document.getElementById('rose');
+  const leftEl = document.getElementById('left');
+  const timeEl = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const resultEl = document.getElementById('result');
+  const playBtn = document.getElementById('play');
+  const shuffleBtn = document.getElementById('shuf');
+
+  // You can tweak the number of petals here (12–20 recommended)
+  let PETALS = 16;
+
+  let removed = 0;
+  let startTime = null;
+  let endTime = null;
+  let finished = false;
+
+  playBtn.addEventListener('click', () => resetGame(PETALS));
+  shuffleBtn.addEventListener('click', () => {
+    // Slightly randomize rotations for variety
+    resetGame(PETALS, true);
+  });
+
+  function resetGame(petalCount = 16, randomize = false){
+    PETALS = petalCount;
+    removed = 0;
+    startTime = null;
+    endTime = null;
+    finished = false;
+    resultEl.textContent = "";
+    scoreEl.textContent = "0";
+    timeEl.textContent = "0.0";
+    leftEl.textContent = PETALS.toString();
+
+    // Clear SVG
+    while (rose.firstChild) rose.removeChild(rose.firstChild);
+
+    // Build defs (optional gradient for petals)
+    const defs = document.createElementNS(svgNS, 'defs');
+    const grad = document.createElementNS(svgNS, 'linearGradient');
+    grad.setAttribute('id','petalGradient');
+    grad.setAttribute('x1','0'); grad.setAttribute('y1','0');
+    grad.setAttribute('x2','0'); grad.setAttribute('y2','1');
+    const stop1 = document.createElementNS(svgNS, 'stop');
+    stop1.setAttribute('offset','0%'); stop1.setAttribute('stop-color','#ff5252');
+    const stop2 = document.createElementNS(svgNS, 'stop');
+    stop2.setAttribute('offset','100%'); stop2.setAttribute('stop-color','#e53935');
+    grad.appendChild(stop1); grad.appendChild(stop2);
+    defs.appendChild(grad);
+    rose.appendChild(defs);
+
+    // Stem
+    const stem = document.createElementNS(svgNS, 'path');
+    stem.setAttribute('d','M200,240 C190,300 210,370 200,460');
+    stem.setAttribute('class','stem');
+    rose.appendChild(stem);
+
+    // Leaves
+    const leafLeft = document.createElementNS(svgNS,'path');
+    leafLeft.setAttribute('d','M170,320 C120,310 110,350 150,360 C170,365 190,345 170,320 Z');
+    leafLeft.setAttribute('class','leaf');
+    rose.appendChild(leafLeft);
+
+    const leafRight = document.createElementNS(svgNS,'path');
+    leafRight.setAttribute('d','M230,310 C280,300 290,340 250,350 C230,355 210,335 230,310 Z');
+    leafRight.setAttribute('class','leaf');
+    rose.appendChild(leafRight);
+
+    // Bud center
+    const bud = document.createElementNS(svgNS,'circle');
+    bud.setAttribute('cx','200'); bud.setAttribute('cy','180'); bud.setAttribute('r','22');
+    bud.setAttribute('class','bud');
+    rose.appendChild(bud);
+
+    // Petals arranged around center using rotated teardrop shapes
+    const baseAngle = randomize ? (Math.random()*360) : 0;
+    for (let i = 0; i < PETALS; i++){
+      const angle = baseAngle + i * (360 / PETALS);
+
+      const g = document.createElementNS(svgNS, 'g');
+      g.setAttribute('transform', `rotate(${angle},200,180)`);
+      rose.appendChild(g);
+
+      const petal = document.createElementNS(svgNS, 'path');
+      // Teardrop shape above the center; we rotate groups to place around
+      petal.setAttribute('d', 'M 200 90 C 230 115, 230 155, 200 175 C 170 155, 170 115, 200 90 Z');
+      petal.setAttribute('class','petal');
+      petal.setAttribute('fill','url(#petalGradient)');
+
+      // Make petals pluckable
+      petal.addEventListener('click', () => pluck(petal));
+
+      g.appendChild(petal);
+    }
+  }
+
+  function pluck(petal){
+    if (finished || petal.classList.contains('removed')) return;
+
+    // Start timer on first pluck
+    if (removed === 0){
+      startTime = performance.now();
+    }
+
+    petal.classList.add('falling','removed');
+    removed++;
+    leftEl.textContent = (PETALS - removed).toString();
+
+    // Update live time while playing
+    if (!finished){
+      const now = performance.now();
+      const elapsedSec = startTime ? (now - startTime)/1000 : 0;
+      timeEl.textContent = elapsedSec.toFixed(1);
+    }
+
+    // When all petals are gone, compute score & result
+    if (removed >= PETALS){
+      finished = true;
+      endTime = performance.now();
+      const totalSec = (endTime - startTime)/1000;
+
+      // Speed = petals per second; Score scales speed up to a 0–150-ish range
+      const speed = PETALS / Math.max(totalSec, 0.001);   // avoid divide-by-zero
+      let score = Math.round(speed * 60);                 // 1 petal/sec -> 60 points
+      score = Math.max(0, Math.min(score, 150));          // clamp for neatness
+      scoreEl.textContent = score.toString();
+
+      // Result message per your ranges
+      let msg = "";
+      if (score > 100){
+        msg = "It's Meant to Be!";
+      } else if (score >= 80){
+        msg = "It's good odds!";
+      } else if (score >= 60){
+        msg = "Maybe!";
+      } else if (score >= 40){
+        msg = "It's not looking good.";
+      } else {
+        msg = "No way Josue";
+      }
+      resultEl.textContent = msg;
+       }
+  }
+
+  // Kick off
+  resetGame(PETALS);
+})();
+</script>
+</body>

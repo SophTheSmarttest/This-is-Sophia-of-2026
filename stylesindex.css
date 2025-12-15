@@ -1,0 +1,173 @@
+
+/* ====== Reset & Core Theme Colors ====== */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+:root {
+  --beige: #f5efe6;
+  --white: #ffffff;
+  --red:   #b61f2b; /* warm, professional red */
+  --pink:  #d94b79; /* sophisticated pink accent */
+  --text:  #2b2b2b;
+  --muted: #6c757d;
+  --shadow: 0 10px 30px rgba(0,0,0,0.08);
+
+  /* Layout tokens */
+  --sidebar-w: 22%;        /* fixed sidebar width */
+  --content-gap: 28px;       /* gap between sidebar and content */
+  --content-max: 70%;     /* readability cap */
+}
+
+/* ====== Base ====== */
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background-color: var(--beige);
+  color: var(--text);
+  font-family: "Young Serif", serif;
+  line-height: 1.65;
+  align-content: center;
+}
+
+/* ====== Sidebar (fixed) ====== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background-color: var(--white);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 10;
+  overflow-y: auto;          /* sidebar scrolls if taller than the viewport */
+}
+
+.brand-title {
+  font-size: 2.5rem;         /* larger title */
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+}
+.brand-subtitle {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+/* Navigation links */
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+.side-link {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  border: 1px solid rgba(0,0,0,0.06);
+  background-color: rgba(255,255,255,0.92);
+}
+.side-link:hover {
+  color: var(--white);
+  background-color: var(--red);
+  border-color: transparent;
+}
+
+/* ====== Content column (NOT fixed) ====== */
+/* Key: offset AND constrain width so it never sits under the fixed sidebar */
+.content {
+  margin-left: calc(var(--sidebar-w) + var(--content-gap));               /* horizontal offset */
+  width: calc(100% - var(--sidebar-w) - var(--content-gap));              /* constrained width */
+  max-width: var(--content-max);                                          /* readability cap */
+  padding: 2rem 2rem 5rem;
+  /* Prevent accidental overlap at the very top on some browsers */
+  padding-top: 2.25rem;
+}
+
+/* ====== Sections ====== */
+.section {
+  background-color: var(--white);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 3.75rem;
+  box-shadow: var(--shadow);
+  padding: 1.75rem;
+  margin-bottom: 1.75rem;
+  scroll-margin-top: 20px;    /* clean anchor jumps (allows for top spacing) */
+  align-content: center;
+}
+
+.section-title {
+  color: var(--red);
+  margin: 0 0 0.9rem 0;
+  font-size: 2rem;
+  align-content: center;
+}
+.lead {
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+}
+
+/* ====== Home gallery (equal sizes + cropping) ====== */
+.image-grid {
+  display:block;
+  align-content:center;
+}
+
+
+.image-card {
+  /* This sets the shape all images should conform to, e.g., 3:2 */
+width: 300px;          /* choose any width */
+  height: 200px;         /* choose any height */
+  object-fit: cover;   
+  display: contents;
+}
+
+
+/* Shared image frame styling */
+.image-frame {
+  border-radius: 0.75rem;
+  border: 3px solid rgba(217,75,121,0.15);
+  box-shadow: 0 6px 20px rgba(182,31,43,0.08), 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* ====== Split layout for image + text ====== */
+.split {
+  display:block;
+  grid-template-columns: 600px 1fr; /* image column + text column */
+  gap: 1.25rem;
+  align-items: center;
+}
+.split-media img {
+  width: 100%;
+  height: auto; /* final size controlled by aspect-ratio */
+}
+
+/* ====== Lists, links, footer ====== */
+.bullet-list { padding-left: 1.1rem; }
+.bullet-list li { margin: 0.35rem 0; }
+
+.timeline { list-style: none; padding-left: 0; margin: 0; }
+.timeline li {
+  margin: 0.35rem 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px dashed rgba(0,0,0,0.08);
+}
+.timeline li:last-child { border-bottom: none; }
+.timeline-date { color: var(--pink); font-weight: 700; margin-right: 0.35rem; }
+
+.muted-note { color: var(--muted); }
+
+a.accent-link {
+  color: var(--pink);
+  text-decoration: none;}
+
